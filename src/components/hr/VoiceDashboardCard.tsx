@@ -3,8 +3,10 @@ import { DashboardCard } from "./DashboardCard"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useFer } from "@/lib/FerContext"
 
-export function VoiceDashboardCard() {
-  const { voiceResult, voiceHistory } = useFer()
+export function VoiceDashboardCard({ overrideResult, overrideHistory }: { overrideResult?: any; overrideHistory?: any[] } = {}) {
+  const { voiceResult: ctxVoice, voiceHistory: ctxVoiceHistory } = useFer()
+  const voiceResult = overrideResult ?? ctxVoice
+  const voiceHistory = overrideHistory ?? ctxVoiceHistory
 
   if (!voiceResult) {
     return (

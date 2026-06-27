@@ -3,8 +3,10 @@ import { DashboardCard } from "./DashboardCard"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useFer } from "@/lib/FerContext"
 
-export function FerDashboardCard() {
-  const { faceResult, faceHistory } = useFer()
+export function FerDashboardCard({ overrideResult, overrideHistory }: { overrideResult?: any; overrideHistory?: any[] } = {}) {
+  const { faceResult: ctxFace, faceHistory: ctxFaceHistory } = useFer()
+  const faceResult = overrideResult ?? ctxFace
+  const faceHistory = overrideHistory ?? ctxFaceHistory
 
   if (!faceResult) {
     return (

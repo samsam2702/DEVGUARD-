@@ -5,6 +5,45 @@ export interface ChatAnalysis {
   score: number
 }
 
+export interface EmployeeAnalysisData {
+  chatAnalysis: ChatAnalysis | null
+  faceResult: any
+  faceHistory: any[]
+  voiceResult: any
+  voiceHistory: any[]
+  updatedAt: string
+}
+
+// Save all analysis data per employee username
+export function saveEmployeeAnalysis(username: string, data: Partial<EmployeeAnalysisData>) {
+  const key = `devguard_analysis_${username}`
+  const existing = loadEmployeeAnalysis(username)
+  const merged = { ...existing, ...data, updatedAt: new Date().toISOString() }
+  localStorage.setItem(key, JSON.stringify(merged))
+}
+
+export function loadEmployeeAnalysis(username: string): EmployeeAnalysisData {
+  try {
+    const raw = localStorage.getItem(`devguard_analysis_${username}`)
+    return raw ? JSON.parse(raw) : { chatAnalysis: null, faceResult: null, faceHistory: [], voiceResult: null, voiceHistory: [], updatedAt: "" }
+  } catch {
+    return { chatAnalysis: null, faceResult: null, faceHistory: [], voiceResult: null, voiceHistory: [], updatedAt: "" }
+  }
+}
+
+// List all employees that have analysis data
+export function getAllEmployeeAnalyses(): Record<string, EmployeeAnalysisData> {
+  const result: Record<string, EmployeeAnalysisData> = {}
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key?.startsWith("devguard_analysis_")) {
+      const username = key.replace("devguard_analysis_", "")
+      result[username] = loadEmployeeAnalysis(username)
+    }
+  }
+  return result
+}
+
 interface AnalysisContextValue {
   faceResult: any
   faceHistory: any[]
@@ -28,24 +67,38 @@ const AnalysisContext = createContext<AnalysisContextValue>({
 })
 
 export function FerProvider({ children }: { children: ReactNode }) {
-  const [faceResult, setFaceResultState] = useState<any>(null)
-  const [faceHistory, setFaceHistory] = useState<any[]>([])
-  const [voiceResult, setVoiceResultState] = useState<any>(null)
-  const [voiceHistory, setVoiceHistory] = useState<any[]>([])
-  const [chatAnalysis, setChatAnalysisState] = useState<ChatAnalysis | null>(null)
+  const username = localStorage.getItem("devguard_employee_user") || ""
+  const saved = loadEmployeeAnalysis(username)
+
+  const [faceResult, setFaceResultState] = useState<any>(saved.faceResult)
+  const [faceHistory, setFaceHistory] = useState<any[]>(saved.faceHistory || [])
+  const [voiceResult, setVoiceResultState] = useState<any>(saved.voiceResult)
+  const [voiceHistory, setVoiceHistory] = useState<any[]>(saved.voiceHistory || [])
+  const [chatAnalysis, setChatAnalysisState] = useState<ChatAnalysis | null>(saved.chatAnalysis)
 
   const setFaceResult = (r: any) => {
     setFaceResultState(r)
-    setFaceHistory((prev) => [...prev.slice(-19), r])
+    setFaceHistory((prev) => {
+      const next = [...prev.slice(-19), r]
+      if (username) saveEmployeeAnalysis(username, { faceResult: r, faceHistory: next })
+      return next
+    })
   }
 
   const setVoiceResult = (r: any) => {
     setVoiceResultState(r)
-    setVoiceHistory((prev) => [...prev.slice(-19), r])
+    setVoiceHistory((prev) => {
+      const next = [...prev.slice(-19), r]
+      if (username) saveEmployeeAnalysis(username, { voiceResult: r, voiceHistory: next })
+      return next
+    })
   }
 
   const setChatAnalysis = (r: ChatAnalysis) => {
     setChatAnalysisState(r)
+    if (username) saveEmployeeAnalysis(username, { chatAnalysis: r })
+    // Keep legacy key for backward compat
+    localStorage.setItem("devguard_chat_analysis", JSON.stringify(r))
   }
 
   return (

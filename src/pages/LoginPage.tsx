@@ -1,73 +1,48 @@
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { UserRound, ShieldCheck, ArrowRight } from "lucide-react"
 import { Logo } from "@/components/shared/Logo"
-import { Card } from "@/components/ui/card"
 
 export function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-(--color-surface-subtle) px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
+      <div className="w-full max-w-3xl">
+        <div className="mb-10 flex flex-col items-center text-center">
           <Logo iconClassName="h-11 w-11" className="mb-5 [&>span]:text-2xl" />
-          <p className="text-sm text-(--color-ink-faint)">
-            AI Workplace Behavioral Intelligence Platform
-          </p>
+          <h1 className="text-2xl font-bold text-(--color-ink)">Welcome to DevGuard</h1>
+          <p className="mt-2 text-sm text-(--color-ink-faint)">AI Workplace Behavioral Intelligence Platform</p>
         </div>
 
-        <Card className="p-6 sm:p-8">
-          <div className="mb-6 space-y-1">
-            <h1 className="text-lg font-semibold text-(--color-ink)">Sign in to DevGuard</h1>
-            <p className="text-sm text-(--color-ink-faint)">
-              Choose how you'd like to access the platform.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {/* Employee */}
+          <a href="/employee-login" className="group flex flex-col items-center gap-4 rounded-2xl border-2 border-(--color-border) bg-white p-8 text-center shadow-sm transition-all hover:border-blue-400 hover:shadow-md">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 group-hover:bg-blue-100">
+              <UserRound className="h-8 w-8 text-blue-600" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-(--color-ink)">Employee</h2>
+              <p className="mt-1 text-sm text-(--color-ink-faint)">Access your confidential wellness assistant</p>
+            </div>
+            <div className="mt-auto flex items-center gap-1 text-sm font-medium text-blue-600">
+              Sign in as Employee <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </div>
+          </a>
 
-          <div className="space-y-3">
-            <Link
-              to="/employee"
-              className="group flex items-center justify-between rounded-xl border border-(--color-border) bg-white p-4 transition-colors hover:border-(--color-accent-border) hover:bg-(--color-accent-soft)"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-(--color-surface-muted) group-hover:bg-white">
-                  <UserRound className="h-5 w-5 text-(--color-ink-soft)" strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-(--color-ink)">Employee Login</p>
-                  <p className="text-xs text-(--color-ink-faint)">
-                    Access your confidential assistant
-                  </p>
-                </div>
-              </div>
-              <ArrowRight
-                className="h-4 w-4 text-(--color-ink-faint) transition-transform group-hover:translate-x-0.5 group-hover:text-(--color-accent)"
-                strokeWidth={2}
-              />
-            </Link>
+          {/* HR Manager */}
+          <a href="/hr-login" className="group flex flex-col items-center gap-4 rounded-2xl border-2 border-(--color-border) bg-white p-8 text-center shadow-sm transition-all hover:border-purple-400 hover:shadow-md">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-50 group-hover:bg-purple-100">
+              <ShieldCheck className="h-8 w-8 text-purple-600" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-(--color-ink)">HR / Manager</h2>
+              <p className="mt-1 text-sm text-(--color-ink-faint)">View workplace analytics and wellness reports</p>
+            </div>
+            <div className="mt-auto flex items-center gap-1 text-sm font-medium text-purple-600">
+              Sign in as HR <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </div>
+          </a>
+        </div>
 
-            <Link
-              to="/hr"
-              className="group flex items-center justify-between rounded-xl border border-(--color-border) bg-white p-4 transition-colors hover:border-(--color-accent-border) hover:bg-(--color-accent-soft)"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-(--color-surface-muted) group-hover:bg-white">
-                  <ShieldCheck className="h-5 w-5 text-(--color-ink-soft)" strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-(--color-ink)">HR / Manager Login</p>
-                  <p className="text-xs text-(--color-ink-faint)">
-                    View workplace analytics dashboard
-                  </p>
-                </div>
-              </div>
-              <ArrowRight
-                className="h-4 w-4 text-(--color-ink-faint) transition-transform group-hover:translate-x-0.5 group-hover:text-(--color-accent)"
-                strokeWidth={2}
-              />
-            </Link>
-          </div>
-        </Card>
-
-        <p className="mt-6 text-center text-xs text-(--color-ink-faint)">
+        <p className="mt-8 text-center text-xs text-(--color-ink-faint)">
           By continuing, you agree to DevGuard's workplace usage and confidentiality policies.
         </p>
       </div>
