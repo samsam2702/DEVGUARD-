@@ -5,7 +5,7 @@ import { useFer } from "@/lib/FerContext"
 
 export function FerDashboardCard({ overrideResult, overrideHistory }: { overrideResult?: any; overrideHistory?: any[] } = {}) {
   const { faceResult: ctxFace, faceHistory: ctxFaceHistory } = useFer()
-  const faceResult = overrideResult ?? ctxFace
+  const faceResult = overrideResult !== undefined ? overrideResult : ctxFace
   const faceHistory = overrideHistory ?? ctxFaceHistory
 
   if (!faceResult) {

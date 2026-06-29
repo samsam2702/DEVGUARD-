@@ -14,31 +14,42 @@ export interface EmployeeAnalysisData {
   updatedAt: string
 }
 
-// Save all analysis data per employee username
+const EMPTY_ANALYSIS: EmployeeAnalysisData = {
+  chatAnalysis: null,
+  faceResult: null,
+  faceHistory: [],
+  voiceResult: null,
+  voiceHistory: [],
+  updatedAt: ""
+}
+
 export function saveEmployeeAnalysis(username: string, data: Partial<EmployeeAnalysisData>) {
+  if (!username) return
   const key = `devguard_analysis_${username}`
-  const existing = loadEmployeeAnalysis(username)
+  const existing = loadEmployeeAnalysis(username) ?? { ...EMPTY_ANALYSIS }
   const merged = { ...existing, ...data, updatedAt: new Date().toISOString() }
   localStorage.setItem(key, JSON.stringify(merged))
 }
 
-export function loadEmployeeAnalysis(username: string): EmployeeAnalysisData {
+export function loadEmployeeAnalysis(username: string): EmployeeAnalysisData | null {
+  if (!username) return null
   try {
     const raw = localStorage.getItem(`devguard_analysis_${username}`)
-    return raw ? JSON.parse(raw) : { chatAnalysis: null, faceResult: null, faceHistory: [], voiceResult: null, voiceHistory: [], updatedAt: "" }
+    if (!raw) return null
+    return JSON.parse(raw)
   } catch {
-    return { chatAnalysis: null, faceResult: null, faceHistory: [], voiceResult: null, voiceHistory: [], updatedAt: "" }
+    return null
   }
 }
 
-// List all employees that have analysis data
 export function getAllEmployeeAnalyses(): Record<string, EmployeeAnalysisData> {
   const result: Record<string, EmployeeAnalysisData> = {}
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key?.startsWith("devguard_analysis_")) {
       const username = key.replace("devguard_analysis_", "")
-      result[username] = loadEmployeeAnalysis(username)
+      const data = loadEmployeeAnalysis(username)
+      if (data) result[username] = data
     }
   }
   return result
@@ -68,7 +79,7 @@ const AnalysisContext = createContext<AnalysisContextValue>({
 
 export function FerProvider({ children }: { children: ReactNode }) {
   const username = localStorage.getItem("devguard_employee_user") || ""
-  const saved = loadEmployeeAnalysis(username)
+  const saved = username ? (loadEmployeeAnalysis(username) ?? { ...EMPTY_ANALYSIS }) : { ...EMPTY_ANALYSIS }
 
   const [faceResult, setFaceResultState] = useState<any>(saved.faceResult)
   const [faceHistory, setFaceHistory] = useState<any[]>(saved.faceHistory || [])
@@ -97,7 +108,6 @@ export function FerProvider({ children }: { children: ReactNode }) {
   const setChatAnalysis = (r: ChatAnalysis) => {
     setChatAnalysisState(r)
     if (username) saveEmployeeAnalysis(username, { chatAnalysis: r })
-    // Keep legacy key for backward compat
     localStorage.setItem("devguard_chat_analysis", JSON.stringify(r))
   }
 

@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { Users2, X, Trash2, Pencil, AlertCircle, MessageSquare, ChevronDown, ChevronUp } from "lucide-react"
 import { useEmployees, calcTenure, type Employee } from "@/lib/useEmployees"
-import { useFer } from "@/lib/FerContext"
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return ""
@@ -11,18 +10,24 @@ function formatDate(dateStr: string): string {
   return `${day}/${month}/${year}`
 }
 
-// Pull negative messages from chat sessions in localStorage
-function getNegativeEvidence(): { content: string; timestamp: string; session: string }[] {
+function getEmployeeAnalysis(username: string) {
   try {
-    const raw = localStorage.getItem("devguard_sessions")
+    const raw = localStorage.getItem(`devguard_analysis_${username.toLowerCase()}`)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function getNegativeEvidence(username: string): { content: string; timestamp: string; session: string }[] {
+  try {
+    const sessionsKey = `devguard_sessions_${username.toLowerCase()}`
+    const raw = localStorage.getItem(sessionsKey)
     if (!raw) return []
     const sessions = JSON.parse(raw)
     const results: { content: string; timestamp: string; session: string }[] = []
+    const distressKeywords = ["stressed", "hate", "tired", "overwhelmed", "quit", "can't", "cannot", "anxious", "sad", "angry", "frustrated", "burnout", "exhausted", "depressed", "scared", "worried", "unfair", "pressure", "stuck"]
     for (const session of sessions) {
       for (const msg of session.messages ?? []) {
         if (msg.role === "user") {
-          // Flag messages that contain distress keywords
-          const distressKeywords = ["stressed", "hate", "tired", "overwhelmed", "quit", "can't", "cannot", "anxious", "sad", "angry", "frustrated", "burnout", "exhausted", "depressed", "scared", "worried", "unfair", "pressure", "stuck"]
           const hasDistress = distressKeywords.some((kw) => msg.content.toLowerCase().includes(kw))
           if (hasDistress) {
             results.push({ content: msg.content, timestamp: msg.timestamp, session: session.title })
@@ -30,14 +35,15 @@ function getNegativeEvidence(): { content: string; timestamp: string; session: s
         }
       }
     }
-    return results.slice(-10) // last 10 flagged messages
+    return results.slice(-10)
   } catch { return [] }
 }
 
-// ── Evidence Panel ────────────────────────────────────────────────────────────
-function EvidencePanel({ onClose }: { onClose: () => void }) {
-  const evidence = getNegativeEvidence()
-  const { chatAnalysis } = useFer()
+function EvidencePanel({ employee, onClose }: { employee: Employee; onClose: () => void }) {
+  const username = employee.username?.trim() ?? ""
+  const empData = username ? getEmployeeAnalysis(username) : null
+  const chatAnalysis = empData?.chatAnalysis ?? null
+  const evidence = username ? getNegativeEvidence(username) : []
 
   return (
     <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-5">
@@ -52,7 +58,6 @@ function EvidencePanel({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="text-red-400 hover:text-red-600"><X size={15} /></button>
       </div>
 
-      {/* Current sentiment summary */}
       {chatAnalysis && (
         <div className="mb-4 flex items-center gap-4 rounded-xl bg-white border border-red-100 px-4 py-3 text-sm">
           <div>
@@ -65,10 +70,7 @@ function EvidencePanel({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex-1">
             <div className="h-2 w-full rounded-full bg-red-100">
-              <div
-                className="h-2 rounded-full bg-red-400 transition-all"
-                style={{ width: `${Math.round(chatAnalysis.score * 100)}%` }}
-              />
+              <div className="h-2 rounded-full bg-red-400 transition-all" style={{ width: `${Math.round(chatAnalysis.score * 100)}%` }} />
             </div>
           </div>
         </div>
@@ -101,7 +103,6 @@ function EvidencePanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Date Input ────────────────────────────────────────────────────────────────
 function DateInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const selected = value ? new Date(value + "T00:00:00") : null
   return (
@@ -113,9 +114,7 @@ function DateInput({ value, onChange }: { value: string; onChange: (val: string)
           const m = String(date.getMonth() + 1).padStart(2, "0")
           const d = String(date.getDate()).padStart(2, "0")
           onChange(`${y}-${m}-${d}`)
-        } else {
-          onChange("")
-        }
+        } else { onChange("") }
       }}
       dateFormat="dd/MM/yyyy"
       placeholderText="DD/MM/YYYY"
@@ -132,7 +131,6 @@ type EditableFields = {
   employeeId: string; name: string; role: string; department: string; email: string; joinDate: string; username: string
 }
 
-// ── Employee Edit Form ────────────────────────────────────────────────────────
 function EmployeeForm({ initial, onSave, onCancel, title }: {
   initial: EditableFields; onSave: (data: EditableFields) => void; onCancel: () => void; title: string
 }) {
@@ -156,12 +154,12 @@ function EmployeeForm({ initial, onSave, onCancel, title }: {
     onSave(form)
   }
   const fields: { key: keyof EditableFields; label: string; type?: string; placeholder?: string }[] = [
-    { key: "employeeId", label: "Employee ID",  placeholder: "EMP-001" },
-    { key: "username",   label: "Login Username", placeholder: "Same as employee login (e.g. sam123)" },
-    { key: "name",       label: "Full Name",    placeholder: "Jane Doe" },
-    { key: "role",       label: "Role",         placeholder: "Software Engineer" },
-    { key: "department", label: "Department",   placeholder: "Engineering" },
-    { key: "email",      label: "Email",        type: "email", placeholder: "jane@company.com" },
+    { key: "employeeId", label: "Employee ID",      placeholder: "EMP-001" },
+    { key: "username",   label: "Login Username",   placeholder: "Same as employee login (e.g. sam123)" },
+    { key: "name",       label: "Full Name",        placeholder: "Jane Doe" },
+    { key: "role",       label: "Role",             placeholder: "Software Engineer" },
+    { key: "department", label: "Department",       placeholder: "Engineering" },
+    { key: "email",      label: "Email",            type: "email", placeholder: "jane@company.com" },
   ]
   return (
     <div className="mb-5 rounded-2xl border border-(--color-border) bg-white p-6 shadow-sm">
@@ -195,18 +193,19 @@ function EmployeeForm({ initial, onSave, onCancel, title }: {
   )
 }
 
-// ── Employee Row ──────────────────────────────────────────────────────────────
 function EmployeeRow({ employee, onDelete, onEdit }: {
   employee: Employee; onDelete: () => void; onEdit: () => void
 }) {
-  const { chatAnalysis } = useFer()
   const [showEvidence, setShowEvidence] = useState(false)
-  const isAlert = chatAnalysis?.sentiment === "negative"
+
+  // Load this specific employee's analysis using their linked username
+  const username = employee.username?.trim() ?? ""
+  const empData = username ? getEmployeeAnalysis(username) : null
+  const isAlert = empData?.chatAnalysis?.sentiment === "negative"
 
   return (
     <div className="rounded-xl border border-(--color-border) bg-white shadow-sm">
       <div className="group flex items-center gap-4 px-4 py-3">
-        {/* Avatar + alert badge */}
         <div className="relative">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-primary)/15 text-base font-bold text-(--color-primary)">
             {employee.name.charAt(0).toUpperCase()}
@@ -224,9 +223,7 @@ function EmployeeRow({ employee, onDelete, onEdit }: {
             <span className="font-medium text-(--color-ink)">{employee.name}</span>
             <span className="font-mono text-xs text-(--color-ink-faint)">{employee.employeeId}</span>
             {isAlert && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
-                ⚠ Needs Attention
-              </span>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">⚠ Needs Attention</span>
             )}
           </div>
           <div className="text-sm text-(--color-ink-faint)">{employee.role} · {employee.department}</div>
@@ -261,17 +258,15 @@ function EmployeeRow({ employee, onDelete, onEdit }: {
         </div>
       </div>
 
-      {/* Evidence panel */}
       {showEvidence && isAlert && (
         <div className="px-4 pb-4">
-          <EvidencePanel onClose={() => setShowEvidence(false)} />
+          <EvidencePanel employee={employee} onClose={() => setShowEvidence(false)} />
         </div>
       )}
     </div>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export function EmployeesSection() {
   const { employees, removeEmployee, updateEmployee } = useEmployees()
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
@@ -286,7 +281,9 @@ export function EmployeesSection() {
       </div>
 
       {editingEmployee && (
-        <EmployeeForm title="Edit Employee" initial={{...editingEmployee, username: editingEmployee.username ?? ""}}
+        <EmployeeForm
+          title="Edit Employee"
+          initial={{...editingEmployee, username: editingEmployee.username ?? ""}}
           onSave={(data) => { updateEmployee(editingEmployee.id, data); setEditingEmployee(null) }}
           onCancel={() => setEditingEmployee(null)}
         />
